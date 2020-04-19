@@ -4,14 +4,16 @@ const state = (function() {
     const ROWS = 8;
     const RESET_EVERY = 8;
     const RULES = {
-        1: [0, 1],
-        0: [1, 1, 0]
+        1: [1, 0, 1],
+        0: [0]
     };
     const STEPS_PER_ROW = 8;
     const MAX_STEP = ROWS * STEPS_PER_ROW;
     const KICK_EVERY = 4;
 
-    let initRule = randomPattern(ROWS);
+    const INIT_PATTERN = randomPattern(STEPS_PER_ROW);
+
+    let initRule = randomPattern(STEPS_PER_ROW);
     let currentStep = 0;
     let ding;
     let kick;
@@ -28,6 +30,7 @@ const state = (function() {
         MAX_STEP,
         initRule,
         KICK_EVERY,
+        INIT_PATTERN,
         currentStep,
         ding,
         kick,
@@ -35,7 +38,8 @@ const state = (function() {
         rule
     };
 })();
-state.randomizeInitRule = _ => (state.initRule = randomPattern(state.ROWS));
+state.randomizeInitRule = _ =>
+    (state.initRule = randomPattern(state.STEPS_PER_ROW));
 
 const gui = new dat.GUI();
 gui.add(state, "randomizeInitRule");
@@ -108,10 +112,7 @@ function updateRuleAndPattern() {
         state.patterns = [...Array(state.ROWS).keys()].map(_ =>
             [...Array(state.STEPS_PER_ROW).keys()].map(_ => 0)
         );
-        state.patterns[0] = generatePattern(
-            state.rule,
-            state.patterns[state.patterns.length - 1]
-        );
+        state.patterns[0] = generatePattern(state.rule, state.INIT_PATTERN);
     } else if ((frameCount - 1) % state.STEPS_PER_ROW === 0) {
         //console.log("UPDATING RULE AND PATTERN PATTERN");
         const currentStepRow = Math.floor(
@@ -136,7 +137,8 @@ function draw() {
     }
     background(255);
     const size = width / state.STEPS_PER_ROW;
-    executeBinary(state.rule, -1, 0, size);
+    executeBinary(state.INIT_PATTERN, -1, 0, size);
+    executeBinary(state.rule, -1, size, size);
 
     for (let row = 0; row < state.ROWS; row++) {
         executeBinary(state.patterns[row], row, width / 2 + row * size, size);
