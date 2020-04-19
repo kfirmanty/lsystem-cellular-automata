@@ -22,6 +22,8 @@ const state = (function() {
         [...Array(STEPS_PER_ROW).keys()].map(_ => 0)
     );
     let rule = initRule;
+    let from1 = "1, 0, 1";
+    let from0 = "0";
     return {
         ROWS,
         RESET_EVERY,
@@ -35,7 +37,9 @@ const state = (function() {
         ding,
         kick,
         patterns,
-        rule
+        rule,
+        from1,
+        from0
     };
 })();
 state.randomizeInitRule = _ =>
@@ -43,6 +47,20 @@ state.randomizeInitRule = _ =>
 
 const gui = new dat.GUI();
 gui.add(state, "randomizeInitRule");
+const from1Controller = gui.add(state, "from1");
+const from0Controller = gui.add(state, "from0");
+
+const onTransformationControllerChange = (num, val) => {
+    const newVals = val
+        .split("")
+        .filter(v => v.match(/[0-9]/g))
+        .map(v => parseInt(v))
+        .filter(v => v === 1 || v === 0);
+    console.log("new transformation: ", newVals, " for number: ", num);
+    state.RULES[num] = newVals;
+};
+from1Controller.onChange(val => onTransformationControllerChange(1, val));
+from0Controller.onChange(val => onTransformationControllerChange(0, val));
 
 function preload() {
     soundFormats("wav");
@@ -57,7 +75,6 @@ function setup() {
 }
 
 function updateRule(rule) {
-    console.log("UPDATING RULE:", rule);
     return rule
         .reduce((acc, el) => acc.concat(state.RULES[el]), [])
         .slice(0, state.STEPS_PER_ROW);
@@ -107,14 +124,12 @@ function executeBinary(binary, row, y, size) {
 
 function updateRuleAndPattern() {
     if ((frameCount - 1) % (state.RESET_EVERY * state.STEPS_PER_ROW) === 0) {
-        console.log("RESETTING PATTERN");
         state.rule = state.initRule;
         state.patterns = [...Array(state.ROWS).keys()].map(_ =>
             [...Array(state.STEPS_PER_ROW).keys()].map(_ => 0)
         );
         state.patterns[0] = generatePattern(state.rule, state.INIT_PATTERN);
     } else if ((frameCount - 1) % state.STEPS_PER_ROW === 0) {
-        //console.log("UPDATING RULE AND PATTERN PATTERN");
         const currentStepRow = Math.floor(
             state.currentStep / state.STEPS_PER_ROW
         );
