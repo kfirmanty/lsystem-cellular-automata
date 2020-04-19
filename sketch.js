@@ -1,3 +1,5 @@
+const randomPattern = rows =>
+    [...Array(rows).keys()].map(_ => Math.floor(Math.random() + 0.5));
 const state = (function() {
     const ROWS = 8;
     const RESET_EVERY = 8;
@@ -7,41 +9,46 @@ const state = (function() {
     };
     const STEPS_PER_ROW = 8;
     const MAX_STEP = ROWS * STEPS_PER_ROW;
-    const INIT_PATTERN = [...Array(ROWS).keys()].map(_ =>
-        Math.floor(Math.random() + 0.5)
-    );
+    const KICK_EVERY = 4;
 
+    let initRule = randomPattern(ROWS);
     let currentStep = 0;
     let ding;
+    let kick;
 
     let patterns = [...Array(ROWS).keys()].map(_ =>
         [...Array(STEPS_PER_ROW).keys()].map(_ => 0)
     );
-    let rule = INIT_PATTERN;
+    let rule = initRule;
     return {
         ROWS,
         RESET_EVERY,
         RULES,
         STEPS_PER_ROW,
         MAX_STEP,
-        INIT_PATTERN,
+        initRule,
+        KICK_EVERY,
         currentStep,
         ding,
+        kick,
         patterns,
         rule
     };
 })();
+state.randomizeInitRule = _ => (state.initRule = randomPattern(state.ROWS));
 
 const gui = new dat.GUI();
-//gui.add(state, "INIT_PATTERN");
+gui.add(state, "randomizeInitRule");
 
 function preload() {
     soundFormats("wav");
     state.ding = loadSound("assets/hihat.wav");
+    state.kick = loadSound("assets/kick.wav");
 }
 
 function setup() {
-    createCanvas(400, 600);
+    const canvas = createCanvas(400, 600);
+    canvas.style("display", "block");
     frameRate(8);
 }
 
@@ -76,25 +83,28 @@ function generatePattern(rule, prevPattern) {
 
 function executeBinary(binary, row, y, size) {
     stroke(0);
+    strokeWeight(4);
     binary.forEach((el, i) => {
         if (state.STEPS_PER_ROW * row + i === state.currentStep) {
-            fill(255, 0, 0);
+            fill(127);
             if (el === 1) {
                 state.ding.play();
             }
-        } else if (el === 1) {
-            fill(0, 255, 0);
         } else {
-            noFill(0);
+            noFill();
         }
         rect(i * size, y, size, size);
+        if (el === 1) {
+            fill(255);
+            rect(i * size + size * 0.2, y + size * 0.2, 0.6 * size, 0.6 * size);
+        }
     });
 }
 
-function draw() {
+function updateRuleAndPattern() {
     if ((frameCount - 1) % (state.RESET_EVERY * state.STEPS_PER_ROW) === 0) {
         console.log("RESETTING PATTERN");
-        state.rule = state.INIT_PATTERN;
+        state.rule = state.initRule;
         state.patterns = [...Array(state.ROWS).keys()].map(_ =>
             [...Array(state.STEPS_PER_ROW).keys()].map(_ => 0)
         );
@@ -116,6 +126,13 @@ function draw() {
                     : currentStepRow - 1
             ]
         );
+    }
+}
+
+function draw() {
+    updateRuleAndPattern();
+    if ((frameCount - 1) % state.KICK_EVERY === 0) {
+        state.kick.play();
     }
     background(255);
     const size = width / state.STEPS_PER_ROW;
