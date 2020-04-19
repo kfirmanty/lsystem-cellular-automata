@@ -81,7 +81,7 @@ function updateRule(rule) {
 }
 
 const patternToRuleIndex = pattern =>
-    state.RULES[state.rule[state.rule.length - 1 - pattern]];
+    state.rule[state.rule.length - 1 - pattern];
 
 function generatePattern(rule, prevPattern) {
     //  111  110  101 100  011 010	001	000
